@@ -34,78 +34,44 @@ app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 
-// Enhanced CORS configuration
-// Enhanced CORS configuration
-const getCorsOptions = () => {
-  // Default origins for development and production
-  const defaultOrigins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173", 
-    "https://rohitcarreredge.netlify.app",
-    "https://carreredge.onrender.com" // Add your Render backend URL
-  ];
-  
-  // Get origins from environment variable or use defaults
-  const raw = process.env.FRONTEND_URL || defaultOrigins.join(",");
-  const allowedOrigins = raw.split(",").map((s) => s.trim()).filter(Boolean);
-  
-  console.log("🔄 CORS allowed origins:", allowedOrigins);
-  
-  return {
-    origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, curl, health checks, etc.)
-      if (!origin) {
-        console.log("✅ Allowing request with no origin (health check/internal)");
-        return callback(null, true);
-      }
-      
-      // In development, be more permissive
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`🔓 Development mode - Allowing origin: ${origin}`);
-        return callback(null, true);
-      }
-      
-      // Check if origin is in allowed list
-      if (allowedOrigins.includes(origin)) {
-        console.log(`✅ Allowed CORS request from: ${origin}`);
-        return callback(null, true);
-      } else {
-        console.log(`❌ Blocked CORS request from: ${origin}`);
-        console.log(`📋 Allowed origins:`, allowedOrigins);
-        return callback(new Error(`CORS policy: Origin ${origin} not allowed`), false);
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: [
-      'Content-Type', 
-      'Authorization', 
-      'X-Requested-With', 
-      'Cookie', 
-      'Set-Cookie',
-      'Accept',
-      'Origin'
-    ],
-    exposedHeaders: ["set-cookie"],
-    maxAge: 86400 // 24 hours for preflight cache
-  };
+// CORS configuration - explicit allowed origins and credentials
+const allowedOrigins = [
+  (process.env.FRONTEND_URL || "https://rohitcarreredge.netlify.app"),
+  "https://carreredge.onrender.com",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+].filter(Boolean);
+
+const corsOptions = {
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Cookie",
+    "Accept",
+    "Origin",
+  ],
+  exposedHeaders: ["set-cookie"],
+  maxAge: 86400,
 };
 
-// Apply CORS middleware
-const corsOptions = getCorsOptions();
-app.use(cors(corsOptions));
+console.log("🔄 CORS allowed origins:", allowedOrigins);
 
-// Explicitly handle preflight requests for all routes
+// Apply CORS middleware
+app.use(cors(corsOptions));
 app.options("*", cors(corsOptions));
 
-// Enhanced CORS error handler
+// Simple CORS error handler for easier debugging
 app.use((err, req, res, next) => {
   if (err && /CORS policy/i.test(err.message)) {
     console.log(`🚫 CORS Error: ${err.message}`);
-    return res.status(403).json({ 
+    return res.status(403).json({
       message: err.message,
       details: "Check if your frontend URL is in the allowed origins list",
-      allowedOrigins: corsOptions.origin instanceof Function ? "Dynamic check" : corsOptions.origin
+      allowedOrigins,
     });
   }
   next(err);
