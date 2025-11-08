@@ -84,28 +84,14 @@ const AiLearn = () => {
       // Limit response length on the server by requesting a maxOutputTokens value.
       // This reduces token usage on the Gemini API.
       const DEFAULT_MAX_TOKENS = 250; // adjust as needed (250 tokens ~ short paragraph)
-      const res = await fetch(`/api/gemini/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text, model: MODEL_NAME, maxOutputTokens: DEFAULT_MAX_TOKENS }),
-        signal: controller.signal,
-      });
+      // Use the centralized axios instance so requests go to the configured backend (VITE_API_URL)
+      const axiosRes = await api.post(
+        "/api/gemini/generate",
+        { text, model: MODEL_NAME, maxOutputTokens: DEFAULT_MAX_TOKENS },
+        { signal: controller.signal }
+      );
 
-      const json = await res.json();
-
-      if (!res.ok) {
-        console.error("Gemini proxy returned error", res.status, json);
-        const errorMsg = json?.error ? JSON.stringify(json.error).slice(0, 300) : `Status ${res.status}`;
-        setMessages((prev) => [
-          ...prev,
-          { sender: "ai", text: `⚠️ Something went wrong: ${errorMsg}`, timestamp: new Date() },
-        ]);
-        setLoading(false);
-        abortControllerRef.current = null;
-        return;
-      }
-
-      const data = json?.data;
+      const data = axiosRes?.data?.data || axiosRes?.data;
       // Extract text; ensure we have a readable fallback
       const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data).slice(0, 1000);
 
