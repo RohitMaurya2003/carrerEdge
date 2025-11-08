@@ -4,6 +4,16 @@ import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
 
+// Improve diagnostics: log uncaught exceptions and unhandled rejections so nodemon output includes stack traces
+process.on("uncaughtException", (err) => {
+  console.error("UNCAUGHT EXCEPTION:", err && err.stack ? err.stack : err);
+  // don't exit here; nodemon will restart on file changes — but surface valuable info
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("UNHANDLED REJECTION at:", promise, "reason:", reason && reason.stack ? reason.stack : reason);
+});
+
 import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
