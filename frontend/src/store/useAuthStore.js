@@ -20,12 +20,11 @@ export const useAuthStore = create((set, get) => ({
 
   checkAuth: async () => {
     try {
-  const res = await api.get("/auth/check");
-
+      const res = await api.get("/auth/check");
       set({ authUser: res.data });
       get().connectSocket();
     } catch (error) {
-      console.log("Error in checkAuth:", error);
+      console.log("Error in checkAuth:", error?.response?.data || error.message);
       set({ authUser: null });
     } finally {
       set({ isCheckingAuth: false });
@@ -35,12 +34,12 @@ export const useAuthStore = create((set, get) => ({
   signup: async (data) => {
     set({ isSigningUp: true });
     try {
-  const res = await api.post("/auth/signup", data);
+      const res = await api.post("/auth/signup", data);
       set({ authUser: res.data });
       toast.success("Account created successfully");
       get().connectSocket();
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message || error.message || "Signup failed");
     } finally {
       set({ isSigningUp: false });
     }
@@ -49,13 +48,15 @@ export const useAuthStore = create((set, get) => ({
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
-  const res = await api.post("/auth/login", data);
-      set({ authUser: res.data });
+      const res = await api.post("/auth/login", data);
+      set({ authUser: res.data?.user || res.data });
       toast.success("Logged in successfully");
-
       get().connectSocket();
+      return { success: true };
     } catch (error) {
-      toast.error(error.response.data.message);
+      const message = error?.response?.data?.message || error?.message || "Login failed";
+      toast.error(message);
+      return { success: false, message };
     } finally {
       set({ isLoggingIn: false });
     }
@@ -63,24 +64,24 @@ export const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     try {
-  await api.post("/auth/logout");
+      await api.post("/auth/logout");
       set({ authUser: null });
       toast.success("Logged out successfully");
       get().disconnectSocket();
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message || error.message || "Logout failed");
     }
   },
 
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
-  const res = await api.put("/auth/update-profile", data);
+      const res = await api.put("/auth/update-profile", data);
       set({ authUser: res.data });
       toast.success("Profile updated successfully");
     } catch (error) {
-      console.log("error in update profile:", error);
-      toast.error(error.response.data.message);
+      console.log("error in update profile:", error?.response?.data || error.message);
+      toast.error(error?.response?.data?.message || error.message || "Update failed");
     } finally {
       set({ isUpdatingProfile: false });
     }

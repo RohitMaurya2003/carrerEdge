@@ -26,20 +26,39 @@ const allowedOrigins = [
   "https://carreredge.onrender.com",
 ].filter(Boolean);
 
+// Simpler CORS config: let the library match against an explicit origin list.
 const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    console.log("Blocked CORS origin:", origin);
-    return callback(new Error("Not allowed by CORS"));
-  },
+  origin: allowedOrigins,
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Cookie", "Accept", "Origin"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+    "X-Requested-With",
+    "Cookie",
+    "Accept",
+    "Origin"
+  ],
+  exposedHeaders: ["set-cookie"],
 };
 
+app.use((req, res, next) => {
+  // Manual early handling for OPTIONS to guarantee headers in edge cases
+  if (req.method === 'OPTIONS') {
+    const origin = req.headers.origin;
+    if (origin && allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin);
+      res.header('Vary', 'Origin');
+      res.header('Access-Control-Allow-Credentials', 'true');
+    }
+    res.header('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, Cookie, Accept, Origin');
+    return res.sendStatus(204);
+  }
+  next();
+});
+
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
 
 // Allow larger payloads (images, base64 uploads from frontend)
 app.use(express.json({ limit: "10mb" }));
