@@ -1,10 +1,11 @@
 // frontend/src/lib/axios.js
 import axios from "axios";
 
-const base = import.meta.env.VITE_API_URL || "http://localhost:5001";
+// Use the raw backend origin as the baseURL. Do NOT include the "/api" prefix here.
+// All calls should include the "/api/..." prefix in the request path, e.g.:
+// api.get('/api/auth/check')
 const api = axios.create({
-  // ensure we target backend /api routes
-  baseURL: base.endsWith("/") ? base + "api" : base + "/api",
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001",
   withCredentials: true,
 });
 
