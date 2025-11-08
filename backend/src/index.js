@@ -25,12 +25,14 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 
 // Enhanced CORS configuration
+// Enhanced CORS configuration
 const getCorsOptions = () => {
   // Default origins for development and production
   const defaultOrigins = [
     "http://localhost:5173",
     "http://127.0.0.1:5173", 
-    "https://rohitcarreredge.netlify.app"
+    "https://rohitcarreredge.netlify.app",
+    "https://carreredge.onrender.com" // Add your Render backend URL
   ];
   
   // Get origins from environment variable or use defaults
@@ -41,9 +43,9 @@ const getCorsOptions = () => {
   
   return {
     origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, curl, etc.)
+      // Allow requests with no origin (server-to-server, curl, health checks, etc.)
       if (!origin) {
-        console.log("✅ Allowing request with no origin");
+        console.log("✅ Allowing request with no origin (health check/internal)");
         return callback(null, true);
       }
       
