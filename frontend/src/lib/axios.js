@@ -1,8 +1,10 @@
 import axios from "axios";
 
+const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5001").trim().replace(/\/$/, "");
+
 export const axiosInstance = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || "http://localhost:5001") + "/api",
-  withCredentials: true, // <--- required to send cookies
+  baseURL: `${API_BASE}/api`,
+  withCredentials: true, // include cookies
 });
 
 export const protectRoute = async (req, res, next) => {
