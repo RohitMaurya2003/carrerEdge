@@ -3,7 +3,11 @@ import api from "../lib/axios.js";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client";
 
-const BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === "development" ? "http://localhost:5001" : "/");
+// VITE_API_URL may include the /api suffix in production (e.g. https://carreredge.onrender.com/api)
+// For HTTP API calls we use the axios instance (which uses VITE_API_URL as baseURL).
+// For Socket.IO we must connect to the backend origin (without the /api suffix).
+const RAW_API_URL = import.meta.env.VITE_API_URL || (import.meta.env.MODE === "development" ? "http://localhost:5001" : "/");
+const SOCKET_URL = RAW_API_URL.replace(/\/api\/?$/, "");
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,
@@ -16,7 +20,7 @@ export const useAuthStore = create((set, get) => ({
 
   checkAuth: async () => {
     try {
-  const res = await api.get("/api/auth/check");
+  const res = await api.get("/auth/check");
 
       set({ authUser: res.data });
       get().connectSocket();
@@ -31,7 +35,7 @@ export const useAuthStore = create((set, get) => ({
   signup: async (data) => {
     set({ isSigningUp: true });
     try {
-  const res = await api.post("/api/auth/signup", data);
+  const res = await api.post("/auth/signup", data);
       set({ authUser: res.data });
       toast.success("Account created successfully");
       get().connectSocket();
@@ -45,7 +49,7 @@ export const useAuthStore = create((set, get) => ({
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
-  const res = await api.post("/api/auth/login", data);
+  const res = await api.post("/auth/login", data);
       set({ authUser: res.data });
       toast.success("Logged in successfully");
 
@@ -59,7 +63,7 @@ export const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     try {
-  await api.post("/api/auth/logout");
+  await api.post("/auth/logout");
       set({ authUser: null });
       toast.success("Logged out successfully");
       get().disconnectSocket();
@@ -71,7 +75,7 @@ export const useAuthStore = create((set, get) => ({
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
     try {
-  const res = await api.put("/api/auth/update-profile", data);
+  const res = await api.put("/auth/update-profile", data);
       set({ authUser: res.data });
       toast.success("Profile updated successfully");
     } catch (error) {
@@ -86,7 +90,7 @@ export const useAuthStore = create((set, get) => ({
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
 
-    const socket = io(BASE_URL, {
+    const socket = io(SOCKET_URL, {
       withCredentials: true,
       transports: ["websocket", "polling"],
       query: {

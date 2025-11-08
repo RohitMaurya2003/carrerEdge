@@ -86,7 +86,7 @@ const AiLearn = () => {
       const DEFAULT_MAX_TOKENS = 250; // adjust as needed (250 tokens ~ short paragraph)
       // Use the centralized axios instance so requests go to the configured backend (VITE_API_URL)
       const axiosRes = await api.post(
-        "/api/gemini/generate",
+        "/gemini/generate",
         { text, model: MODEL_NAME, maxOutputTokens: DEFAULT_MAX_TOKENS },
         { signal: controller.signal }
       );
@@ -152,7 +152,7 @@ const AiLearn = () => {
     }
 
     try {
-      const res = await api.post("/api/gemini/save", {
+  const res = await api.post("/gemini/save", {
         messages: messages.map((m) => ({ sender: m.sender, text: m.text })),
         model: MODEL_NAME,
       });
@@ -160,7 +160,7 @@ const AiLearn = () => {
       if (res?.data?.chatId) {
         toast.success("Chat saved successfully! 💾");
         try {
-          const ares = await api.get("/api/gemini/activities");
+          const ares = await api.get("/gemini/activities");
           const docs = ares.data.activities || [];
           const mapped = docs.map((d) => ({ type: d.type, date: d.createdAt, name: d.meta?.name, level: d.meta?.level }));
           localStorage.setItem("progressEvents:v1", JSON.stringify(mapped));

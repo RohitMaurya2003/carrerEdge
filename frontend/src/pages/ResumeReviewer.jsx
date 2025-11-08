@@ -33,7 +33,7 @@ const ResumeReviewer = () => {
       const fd = new FormData();
       fd.append("file", f);
       fd.append("role", role);
-  const res = await api.post("/api/gemini/resume-review-upload", fd, {
+  const res = await api.post("/gemini/resume-review-upload", fd, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
@@ -46,7 +46,7 @@ const ResumeReviewer = () => {
       // refresh progress activities in local cache if user is authenticated
       try {
         if (authUser) {
-          const resp = await api.get("/api/gemini/activities");
+          const resp = await api.get("/gemini/activities");
           const docs = resp.data.activities || [];
           const mapped = docs.map((d) => ({ type: d.type, date: d.createdAt, name: d.meta?.name, level: d.meta?.level }));
           localStorage.setItem("progressEvents:v1", JSON.stringify(mapped));

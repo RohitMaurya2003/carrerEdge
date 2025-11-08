@@ -41,7 +41,7 @@ export default function AIDiscoverNews({ className = "" }) {
       setResult(null);
       setError(null);
 
-  const res = await api.post("/api/discover/summarize", { topic });
+  const res = await api.post("/discover/summarize", { topic });
       const content = res.data?.result;
       if (!content) throw new Error("No content returned");
       setResult(content);

@@ -185,7 +185,7 @@ const ProgressPage = () => {
       }
       setIsLoading(true);
       try {
-    const res = await api.get("/api/gemini/activities");
+  const res = await api.get("/gemini/activities");
         const docs = res.data.activities || [];
         const mapped = docs.map((d) => {
           const ev = { type: d.type, date: d.createdAt };
@@ -215,7 +215,7 @@ const ProgressPage = () => {
 
   async function buySubscription() {
     try {
-  const res = await api.post("/api/payments/create-order", { amount: SUBSCRIPTION_AMOUNT });
+  const res = await api.post("/payments/create-order", { amount: SUBSCRIPTION_AMOUNT });
       const { orderId, amount, currency, keyId } = res.data;
 
       const options = {
@@ -227,7 +227,7 @@ const ProgressPage = () => {
         order_id: orderId,
         handler: async function (response) {
           try {
-            await api.post("/api/payments/verify", {
+            await api.post("/payments/verify", {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,
