@@ -1,17 +1,18 @@
 import axios from "axios";
 
-// Use Vite-provided VITE_API_URL when available (trim whitespace).
-// Fallback to localhost in development, and to relative /api in production
-// when no VITE_API_URL is provided.
-const RAW = import.meta.env.VITE_API_URL;
-const API_BASE =
-  typeof RAW === "string" && RAW.trim().length > 0
-    ? RAW.trim()
-    : import.meta.env.MODE === "development"
-    ? "http://localhost:5001"
-    : "";
-
 export const axiosInstance = axios.create({
-  baseURL: API_BASE ? `${API_BASE}/api` : "/api",
-  withCredentials: true,
+  baseURL: (import.meta.env.VITE_API_URL || "http://localhost:5001") + "/api",
+  withCredentials: true, // <--- required to send cookies
 });
+
+export const protectRoute = async (req, res, next) => {
+  console.log("protectRoute headers:", req.headers);
+  console.log("protectRoute cookies:", req.cookies); // must show jwt cookie
+  // ...existing auth logic...
+  res.cookie("jwt", token, {
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    httpOnly: true,
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+    secure: process.env.NODE_ENV === "production",
+  });
+};
