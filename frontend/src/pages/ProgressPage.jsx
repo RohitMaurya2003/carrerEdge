@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
-import { axiosInstance } from "../lib/axios";
+import api from "../lib/axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Trash2, Plus, TrendingUp, Award, FileText, MessageSquare, Zap, Crown, Lock, Sparkles, Target, BarChart3, Calendar, Activity } from "lucide-react";
 import { toast, Toaster } from "react-hot-toast";
@@ -185,7 +185,7 @@ const ProgressPage = () => {
       }
       setIsLoading(true);
       try {
-        const res = await axiosInstance.get("/gemini/activities");
+    const res = await api.get("/api/gemini/activities");
         const docs = res.data.activities || [];
         const mapped = docs.map((d) => {
           const ev = { type: d.type, date: d.createdAt };
@@ -215,7 +215,7 @@ const ProgressPage = () => {
 
   async function buySubscription() {
     try {
-      const res = await axiosInstance.post("/payments/create-order", { amount: SUBSCRIPTION_AMOUNT });
+  const res = await api.post("/api/payments/create-order", { amount: SUBSCRIPTION_AMOUNT });
       const { orderId, amount, currency, keyId } = res.data;
 
       const options = {
@@ -227,7 +227,7 @@ const ProgressPage = () => {
         order_id: orderId,
         handler: async function (response) {
           try {
-            await axiosInstance.post("/payments/verify", {
+            await api.post("/api/payments/verify", {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_order_id: response.razorpay_order_id,
               razorpay_signature: response.razorpay_signature,

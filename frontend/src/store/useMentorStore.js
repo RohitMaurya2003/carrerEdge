@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { axiosInstance } from "../lib/axios";
+import api from "../lib/axios";
 import toast from "react-hot-toast";
 
 export const useMentorStore = create((set) => ({
@@ -9,7 +9,7 @@ export const useMentorStore = create((set) => ({
   fetchPendingRequests: async () => {
     set({ isFetching: true });
     try {
-      const res = await axiosInstance.get("/mentorship/pending-requests");
+  const res = await api.get("/api/mentorship/pending-requests");
       set({ pendingRequests: res.data });
     } catch (error) {
       toast.error(error.response?.data?.message || "Error fetching pending requests");
@@ -20,7 +20,7 @@ export const useMentorStore = create((set) => ({
 
   acceptRequest: async (menteeId) => {
     try {
-      await axiosInstance.post(`/mentorship/accept/${menteeId}`);
+  await api.post(`/api/mentorship/accept/${menteeId}`);
       set((state) => ({
         pendingRequests: state.pendingRequests.filter((r) => r.mentee._id !== menteeId),
       }));
@@ -31,7 +31,7 @@ export const useMentorStore = create((set) => ({
 
   rejectRequest: async (menteeId) => {
     try {
-      await axiosInstance.post(`/mentorship/reject/${menteeId}`);
+  await api.post(`/api/mentorship/reject/${menteeId}`);
       set((state) => ({
         pendingRequests: state.pendingRequests.filter((r) => r.mentee._id !== menteeId),
       }));

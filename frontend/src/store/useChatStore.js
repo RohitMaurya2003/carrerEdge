@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import { axiosInstance } from "../lib/axios";
+import api from "../lib/axios";
 import { useAuthStore } from "./useAuthStore";
 
 export const useChatStore = create((set, get) => ({
@@ -13,7 +13,7 @@ export const useChatStore = create((set, get) => ({
   getConnectedMentees: async () => {
     set({ isUsersLoading: true });
     try {
-      const res = await axiosInstance.get("/mentorship/connections"); 
+  const res = await api.get("/api/mentorship/connections"); 
       set({ users: res.data.mentees || [] });
       console.log(res.data);
     } catch (error) {
@@ -26,7 +26,7 @@ export const useChatStore = create((set, get) => ({
   getConnectedMentors: async () => {
     set({ isUsersLoading: true });
     try {
-      const res = await axiosInstance.get("/mentorship/connections"); 
+  const res = await api.get("/api/mentorship/connections"); 
       set({ users: res.data.mentors || [] });
       console.log(res.data);
     } catch (error) {
@@ -39,7 +39,7 @@ export const useChatStore = create((set, get) => ({
   getMessages: async (receiverId) => {
     set({ isMessagesLoading: true });
     try {
-      const res = await axiosInstance.get(`/messages/messages/${receiverId}`);
+  const res = await api.get(`/api/messages/messages/${receiverId}`);
       set({ messages: res.data });
     } catch (error) {
       toast.error(error.response?.data?.message || "Error fetching messages");
@@ -52,7 +52,7 @@ export const useChatStore = create((set, get) => ({
     const { selectedUser, messages } = get();
     if (!selectedUser) return toast.error("No user selected");
     try {
-      const res = await axiosInstance.post(`/messages/messages/${selectedUser._id}`, messageData);
+  const res = await api.post(`/api/messages/messages/${selectedUser._id}`, messageData);
       set({ messages: [...messages, res.data] });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to send message");

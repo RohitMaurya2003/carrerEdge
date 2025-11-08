@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { axiosInstance } from "../lib/axios";
+import api from "../lib/axios";
 
 const categories = [
   { key: "Technology", label: "Technology", icon: "💻", color: "from-blue-500 to-cyan-500" },
@@ -41,7 +41,7 @@ export default function AIDiscoverNews({ className = "" }) {
       setResult(null);
       setError(null);
 
-      const res = await axiosInstance.post("/discover/summarize", { topic });
+  const res = await api.post("/api/discover/summarize", { topic });
       const content = res.data?.result;
       if (!content) throw new Error("No content returned");
       setResult(content);

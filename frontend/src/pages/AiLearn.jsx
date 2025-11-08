@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Send, ArrowLeft, Sparkles, Zap, Save, User, Bot, Download, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
-import { axiosInstance } from "../lib/axios";
+import api from "../lib/axios";
 import { toast, Toaster } from "react-hot-toast";
 
 const MODEL_NAME = import.meta?.env?.VITE_GEMINI_MODEL || "gemini-2.5-flash";
@@ -166,7 +166,7 @@ const AiLearn = () => {
     }
 
     try {
-      const res = await axiosInstance.post("/gemini/save", {
+      const res = await api.post("/api/gemini/save", {
         messages: messages.map((m) => ({ sender: m.sender, text: m.text })),
         model: MODEL_NAME,
       });
@@ -174,7 +174,7 @@ const AiLearn = () => {
       if (res?.data?.chatId) {
         toast.success("Chat saved successfully! 💾");
         try {
-          const ares = await axiosInstance.get("/gemini/activities");
+          const ares = await api.get("/api/gemini/activities");
           const docs = ares.data.activities || [];
           const mapped = docs.map((d) => ({ type: d.type, date: d.createdAt, name: d.meta?.name, level: d.meta?.level }));
           localStorage.setItem("progressEvents:v1", JSON.stringify(mapped));
