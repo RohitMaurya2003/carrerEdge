@@ -25,6 +25,7 @@ const __dirname = path.resolve();
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
+
 // Allow a comma-separated list of FRONTEND_URL values (e.g. production and localhost)
 (() => {
   const raw = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -44,6 +45,7 @@ app.use(cookieParser());
   );
 })();
 
+// register routes AFTER cors middleware
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 app.use("/api/mentorship", mentorRoutes);
