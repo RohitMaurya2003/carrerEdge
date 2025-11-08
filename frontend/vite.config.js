@@ -3,7 +3,8 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  build: { outDir: 'build' },
+  // Netlify expects `dist` by default; ensure build output matches Netlify's publish dir
+  build: { outDir: 'dist' },
   // During development, proxy API requests to the backend server
   server: {
     proxy: {
