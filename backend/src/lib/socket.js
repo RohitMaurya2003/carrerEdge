@@ -10,15 +10,14 @@ export const server = http.createServer(app);
 export const io = new Server(server, {
   cors: {
     origin: [
-      "http://localhost:5173",
-      "http://127.0.0.1:5173",
       "https://rohitcarreredge.netlify.app",
-      "https://carreredge.onrender.com"
+      "https://carreredge.onrender.com",
+      "http://localhost:5173",
+      "http://127.0.0.1:5173"
     ],
     methods: ["GET", "POST"],
-    credentials: true,
-  },
-  transports: ["websocket", "polling"], // fallback for Render
+    credentials: true
+  }
 });
 
 // mapping of userId -> socketId
