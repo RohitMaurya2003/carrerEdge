@@ -147,17 +147,23 @@ app.use("/api/discover", apiLimiter, perplexityRoutes);
 app.use("/api/connections", apiLimiter, connectionRoutes);
 
 // Serve static frontend in production
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
-  app.get("*", (req, res) => res.sendFile(path.join(__dirname, "../frontend/dist/index.html")));
-}
+// Frontend is deployed separately on Netlify - backend is API-only
+// 404 handler for API routes
+app.use("/api/*", (req, res) => {
+  res.status(404).json({ 
+    message: "API endpoint not found",
+    path: req.path
+  });
+});
 
-// 404 for unknown API routes
-app.use((req, res, next) => {
-  if (req.path.startsWith("/api/")) {
-    return res.status(404).json({ message: "API endpoint not found", path: req.path });
-  }
-  next();
+// Health check for root path
+app.get("/", (req, res) => {
+  res.json({ 
+    status: "OK", 
+    message: "CareerEdge API Server",
+    frontend: "https://rohitcarreredge.netlify.app",
+    docs: "/api/health"
+  });
 });
 
 // Global error handler
