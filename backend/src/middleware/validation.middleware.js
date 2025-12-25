@@ -10,7 +10,10 @@ const validate = (schema) => {
 
     if (error) {
       const errors = error.details.map((detail) => detail.message);
+      console.log("Validation failed:", errors);
+      console.log("Request body:", req.body);
       return res.status(400).json({ 
+        message: errors.join(", "),
         error: "Validation failed", 
         details: errors 
       });
