@@ -125,10 +125,9 @@ export default function Footer({ onShowResources, onShowSchedule }) {
             
             <div className="flex space-x-3">
               {[
-                { icon: Instagram, href: "https://instagram.com/yourusername", label: "Instagram", color: "from-pink-500 to-rose-500" },
-                { icon: Linkedin, href: "https://linkedin.com/in/yourusername", label: "LinkedIn", color: "from-blue-500 to-cyan-500" },
-                { icon: Twitter, href: "https://twitter.com/yourusername", label: "Twitter", color: "from-sky-500 to-blue-500" },
-                { icon: Github, href: "https://github.com/yourusername", label: "GitHub", color: "from-purple-500 to-pink-500" },
+                { icon: Linkedin, href: "https://www.linkedin.com/in/rohit-maurya-122869281/", label: "LinkedIn", color: "from-blue-500 to-cyan-500" },
+                { icon: Twitter, href: "https://x.com/RohitMaury91919", label: "Twitter", color: "from-sky-500 to-blue-500" },
+                { icon: Github, href: "https://github.com/RohitMaurya2003", label: "GitHub", color: "from-purple-500 to-pink-500" },
               ].map((social, index) => (
                 <motion.a
                   key={social.label}
