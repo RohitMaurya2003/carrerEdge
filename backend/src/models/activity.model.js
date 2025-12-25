@@ -9,5 +9,8 @@ const ActivitySchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Index for efficient activity queries by user
+ActivitySchema.index({ userId: 1, createdAt: -1 });
+
 const Activity = mongoose.models.Activity || mongoose.model("Activity", ActivitySchema);
 export default Activity;

@@ -1,5 +1,6 @@
 import express from "express";
 import { summarizeTopic } from "../controllers/perplexity.controller.js";
+import { validateSummarizeTopic } from "../middleware/validation.middleware.js";
 
 const router = express.Router();
 

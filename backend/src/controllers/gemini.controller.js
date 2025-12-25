@@ -41,7 +41,13 @@ export const generateContent = async (req, res) => {
     }
 
     if (!r.ok) {
-      return res.status(r.status).json({ error: data || raw || `Status ${r.status}` });
+      const providerError = data || raw;
+      const leaked = (providerError && ((providerError.message && /leak|leaked|reported as leaked/i.test(providerError.message)) || (providerError.status && providerError.status === 'PERMISSION_DENIED')));
+      if (leaked) {
+        console.error("Gemini API key leak detected:", providerError);
+        return res.status(502).json({ error: "AI provider rejected server API key (reported leaked). Please rotate GEMINI_API_KEY and retry." });
+      }
+      return res.status(r.status).json({ error: providerError || `Status ${r.status}` });
     }
 
     return res.json({ data: data });
@@ -117,7 +123,13 @@ export const resumeReview = async (req, res) => {
     }
 
     if (!r.ok) {
-      return res.status(r.status).json({ error: data || raw || `Status ${r.status}` });
+      const providerError = data || raw;
+      const leaked = (providerError && ((providerError.message && /leak|leaked|reported as leaked/i.test(providerError.message)) || (providerError.status && providerError.status === 'PERMISSION_DENIED')));
+      if (leaked) {
+        console.error("Gemini API key leak detected:", providerError);
+        return res.status(502).json({ error: "AI provider rejected server API key (reported leaked). Please rotate GEMINI_API_KEY and retry." });
+      }
+      return res.status(r.status).json({ error: providerError || `Status ${r.status}` });
     }
 
     // Extract the generated text from the expected proto shape if present
@@ -211,7 +223,13 @@ export const resumeReviewUpload = async (req, res) => {
     }
 
     if (!r.ok) {
-      return res.status(r.status).json({ error: data || raw || `Status ${r.status}` });
+      const providerError = data || raw;
+      const leaked = (providerError && ((providerError.message && /leak|leaked|reported as leaked/i.test(providerError.message)) || (providerError.status && providerError.status === 'PERMISSION_DENIED')));
+      if (leaked) {
+        console.error("Gemini API key leak detected:", providerError);
+        return res.status(502).json({ error: "AI provider rejected server API key (reported leaked). Please rotate GEMINI_API_KEY and retry." });
+      }
+      return res.status(r.status).json({ error: providerError || `Status ${r.status}` });
     }
 
     let generated = null;

@@ -279,7 +279,7 @@ const ResumeReviewer = () => {
                     </div>
                     <h3 className="font-semibold text-red-300">Error</h3>
                   </div>
-                  <p className="text-red-200/80 text-sm">{error}</p>
+                  <p className="text-red-200/80 text-sm">{typeof error === 'string' ? error : JSON.stringify(error)}</p>
                 </motion.div>
               )}
 

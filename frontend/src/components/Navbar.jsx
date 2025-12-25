@@ -81,7 +81,7 @@ const Navbar = () => {
 
         {/* Quick action button */}
         <button 
-          onClick={() => window.open("http://localhost:8080", "_blank")} 
+          onClick={() => window.open("https://www.resume-now.com/build-resume?utm_source=google&utm_medium=sem&utm_campaign=20457377013&utm_term=create+resume&network=g&device=c&adposition=&adgroupid=152901458136&placement=&adid=687406850081&gad_source=1&gad_campaignid=20457377013&gbraid=0AAAAADEP8E7wyCFQA0rl6Ce9tkHYmvwxd&gclid=CjwKCAiA3rPKBhBZEiwAhPNFQM-KZ0zSolibwsR122IySWmyvQeAK07mDjRGNh6sDtRAui0fUw6wCBoCPd0QAvD_BwE", "_blank")} 
           className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl hover:from-cyan-600 hover:to-purple-600 transform hover:scale-105 transition-all duration-300 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 group relative overflow-hidden"
         >
           <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
@@ -205,7 +205,7 @@ const Navbar = () => {
             
             <button 
               onClick={() => {
-                window.open("http://localhost:8080", "_blank");
+                window.open("https://www.resume-now.com/build-resume?utm_source=google&utm_medium=sem&utm_campaign=20457377013&utm_term=create+resume&network=g&device=c&adposition=&adgroupid=152901458136&placement=&adid=687406850081&gad_source=1&gad_campaignid=20457377013&gbraid=0AAAAADEP8E7wyCFQA0rl6Ce9tkHYmvwxd&gclid=CjwKCAiA3rPKBhBZEiwAhPNFQM-KZ0zSolibwsR122IySWmyvQeAK07mDjRGNh6sDtRAui0fUw6wCBoCPd0QAvD_BwE", "_blank");
                 setOpen(false);
               }} 
               className="mt-4 px-4 py-3 bg-gradient-to-r from-cyan-500 to-purple-500 text-white rounded-xl font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg shadow-cyan-500/25"

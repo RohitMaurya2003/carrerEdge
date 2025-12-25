@@ -3,6 +3,10 @@ import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import path from "path";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import mongoSanitize from "express-mongo-sanitize";
+import xss from "xss-clean";
 
 import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
@@ -19,10 +23,39 @@ dotenv.config();
 const PORT = process.env.PORT || 5001;
 const __dirname = path.resolve();
 
+// Security middleware
+app.use(helmet({
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  contentSecurityPolicy: false // Disable CSP for now, configure later for production
+}));
+
+// Rate limiting - prevent brute force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 requests per windowMs
+  message: { error: "Too many requests from this IP, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per windowMs
+  message: { error: "Too many requests, please slow down" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
 // Allow larger JSON payloads to support base64 image uploads from the frontend
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
+
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// Data sanitization against XSS
+app.use(xss());
 
 // Enhanced CORS configuration
 // Enhanced CORS configuration
@@ -117,14 +150,14 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-// Register API routes
-app.use("/api/auth", authRoutes);
-app.use("/api/messages", messageRoutes);
-app.use("/api/mentorship", mentorRoutes);
-app.use("/api/gemini", geminiRoutes);
-app.use("/api/payments", paymentRoutes);
-app.use("/api/discover", perplexityRoutes);
-app.use("/api/connections", connectionRoutes);
+// Register API routes with rate limiting
+app.use("/api/auth", authLimiter, authRoutes);
+app.use("/api/messages", apiLimiter, messageRoutes);
+app.use("/api/mentorship", apiLimiter, mentorRoutes);
+app.use("/api/gemini", apiLimiter, geminiRoutes);
+app.use("/api/payments", authLimiter, paymentRoutes);
+app.use("/api/discover", apiLimiter, perplexityRoutes);
+app.use("/api/connections", apiLimiter, connectionRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === "production") {
@@ -165,6 +198,30 @@ server.listen(PORT, () => {
     process.env.FRONTEND_URL || "http://localhost:5173, https://rohitcarreredge.netlify.app"
   );
   connectDB();
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err) => {
+  console.error('🔥 UNHANDLED REJECTION! Shutting down...');
+  console.error(err.name, err.message);
+  server.close(() => {
+    process.exit(1);
+  });
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (err) => {
+  console.error('🔥 UNCAUGHT EXCEPTION! Shutting down...');
+  console.error(err.name, err.message);
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+  console.log('👋 SIGTERM received. Shutting down gracefully');
+  server.close(() => {
+    console.log('💥 Process terminated');
+  });
 });
 
 export default app;

@@ -206,7 +206,7 @@ const AiLearn = () => {
     }
 
     try {
-      const res = await axiosInstance.post("/api/gemini/save", { // Fixed: added /api prefix
+      const res = await axiosInstance.post("/gemini/save", {
         messages: messages.map((m) => ({ sender: m.sender, text: m.text })),
         model: MODEL_NAME,
       });
@@ -214,7 +214,7 @@ const AiLearn = () => {
       if (res?.data?.chatId) {
         toast.success("Chat saved successfully! 💾");
         try {
-          const ares = await axiosInstance.get("/api/gemini/activities"); // Fixed: added /api prefix
+          const ares = await axiosInstance.get("/gemini/activities");
           const docs = ares.data.activities || [];
           const mapped = docs.map((d) => ({ 
             type: d.type, 

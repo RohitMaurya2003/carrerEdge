@@ -36,6 +36,11 @@ export const summarizeTopic = async (req, res) => {
 
     if (!resPerf.ok) {
       const text = await resPerf.text();
+      const leaked = /leak|leaked|reported as leaked|API key/i.test(text);
+      if (leaked) {
+        console.error("Perplexity API key issue:", text);
+        return res.status(502).json({ message: "AI provider rejected server API key. Please rotate PERPLEXITY_API_KEY and retry." });
+      }
       return res.status(502).json({ message: "Perplexity API error", detail: text });
     }
 

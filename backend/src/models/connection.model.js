@@ -21,6 +21,9 @@ const connectionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Create compound unique index to prevent duplicate connections
+connectionSchema.index({ mentor: 1, mentee: 1 }, { unique: true });
+
 const Connection = mongoose.model("Connection", connectionSchema);
 
 export default Connection;
