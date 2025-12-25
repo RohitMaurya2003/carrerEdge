@@ -69,24 +69,25 @@ export const useAuthStore = create((set, get) => ({
       toast.success("Logged out successfully");
       get().disconnectSocket();
     } catch (error) {
-<<<<<<< HEAD
       const msg = error?.response?.data?.message || error?.response?.data?.error || error.message || "Logout failed";
       toast.error(msg);
-=======
-      toast.error(error?.response?.data?.message || error.message || "Logout failed");
->>>>>>> origin/main
     }
   },
 
   updateProfile: async (data) => {
     set({ isUpdatingProfile: true });
-      toast.error(error?.response?.data?.message || error.message || "Logout failed");("Profile updated successfully");
+    try {
       const res = await api.put("/auth/update-profile", data);
       set({ authUser: res.data });
       toast.success("Profile updated successfully");
     } catch (error) {
       console.log("error in update profile:", error?.response?.data || error.message);
       toast.error(error?.response?.data?.message || error.message || "Update failed");
+    } finally {
+      set({ isUpdatingProfile: false });
+    }
+  },
+
   connectSocket: () => {
     const { authUser } = get();
     if (!authUser || get().socket?.connected) return;
