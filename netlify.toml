@@ -1,0 +1,11 @@
+# Netlify configuration - version-controlled
+# Builds the frontend in the `frontend` subfolder and publishes the Vite output in `frontend/dist`.
+
+[build]
+  base = "frontend"
+  publish = "dist"
+  command = "npm run build"
+
+# You can set environment variables per-context here if needed.
+# [context.production.environment]
+#   VITE_GEMINI_MODEL = "gemini-2.5-flash"

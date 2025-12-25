@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { axiosInstance } from "../lib/axios";
+import api from "../lib/axios";
 import { useAuthStore } from "../store/useAuthStore";
 import { useNavigate } from "react-router-dom";
 import { UploadCloud, FileText, Target, Sparkles, Download, Star, Zap, TrendingUp } from "lucide-react";
@@ -33,7 +33,7 @@ const ResumeReviewer = () => {
       const fd = new FormData();
       fd.append("file", f);
       fd.append("role", role);
-      const res = await axiosInstance.post("/gemini/resume-review-upload", fd, {
+  const res = await api.post("/gemini/resume-review-upload", fd, {
         headers: { "Content-Type": "multipart/form-data" },
         onUploadProgress: (progressEvent) => {
           if (progressEvent.total) {
@@ -46,7 +46,7 @@ const ResumeReviewer = () => {
       // refresh progress activities in local cache if user is authenticated
       try {
         if (authUser) {
-          const resp = await axiosInstance.get("/gemini/activities");
+          const resp = await api.get("/gemini/activities");
           const docs = resp.data.activities || [];
           const mapped = docs.map((d) => ({ type: d.type, date: d.createdAt, name: d.meta?.name, level: d.meta?.level }));
           localStorage.setItem("progressEvents:v1", JSON.stringify(mapped));

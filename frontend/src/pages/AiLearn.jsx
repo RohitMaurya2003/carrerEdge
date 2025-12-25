@@ -3,16 +3,10 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Brain, Send, ArrowLeft, Sparkles, Zap, Save, User, Bot, Download, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/useAuthStore";
-import { axiosInstance } from "../lib/axios";
-import { socket } from "../lib/socket";
+import api from "../lib/axios";
 import { toast, Toaster } from "react-hot-toast";
 
 const MODEL_NAME = import.meta?.env?.VITE_GEMINI_MODEL || "gemini-2.5-flash";
-
-// Fix: Define the correct API base URL
-const API_BASE_URL = import.meta.env.MODE === 'development' 
-  ? 'http://localhost:5001' 
-  : ''; // Empty string for production (same domain)
 
 const AiLearn = () => {
   const navigate = useNavigate();
@@ -39,7 +33,6 @@ const AiLearn = () => {
 
   useEffect(() => {
     console.info("Using Gemini model (frontend):", MODEL_NAME);
-    console.info("API Base URL:", API_BASE_URL);
   }, []);
 
   // Auto-resize textarea
@@ -84,76 +77,37 @@ const AiLearn = () => {
     setLoading(true);
 
     try {
-      // Create an AbortController so the user can cancel generation to save tokens
+      // create an AbortController so the user can cancel generation to save tokens
       const controller = new AbortController();
       abortControllerRef.current = controller;
 
-      const DEFAULT_MAX_TOKENS = 250;
-      
-      // FIX: Use the correct API_BASE_URL
-      const response = await fetch(`${API_BASE_URL}/api/gemini/generate`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ 
-          text, 
-          model: MODEL_NAME, 
-          maxOutputTokens: DEFAULT_MAX_TOKENS 
-        }),
-        signal: controller.signal,
-      });
+      // Limit response length on the server by requesting a maxOutputTokens value.
+      // This reduces token usage on the Gemini API.
+      const DEFAULT_MAX_TOKENS = 250; // adjust as needed (250 tokens ~ short paragraph)
+      // Use the centralized axios instance so requests go to the configured backend (VITE_API_URL)
+      const axiosRes = await api.post(
+        "/gemini/generate",
+        { text, model: MODEL_NAME, maxOutputTokens: DEFAULT_MAX_TOKENS },
+        { signal: controller.signal }
+      );
 
-      // Check if response is OK before trying to parse JSON
-      if (!response.ok) {
-        let errorMessage = `HTTP Error: ${response.status}`;
-        try {
-          // Try to get error message from response body
-          const errorData = await response.text();
-          if (errorData) {
-            const parsedError = JSON.parse(errorData);
-            errorMessage = parsedError.message || parsedError.error || errorMessage;
-          }
-        } catch (e) {
-          // If we can't parse the error, use the status text
-          errorMessage = response.statusText || errorMessage;
-        }
-        
-        throw new Error(errorMessage);
-      }
+      const data = axiosRes?.data?.data || axiosRes?.data;
+      // Extract text; ensure we have a readable fallback
+      const aiText = data?.candidates?.[0]?.content?.parts?.[0]?.text || JSON.stringify(data).slice(0, 1000);
 
-      // Parse the response JSON
-      const data = await response.json();
-      
-      console.log("Gemini API Response:", data);
-
-      // Extract text from response - handle different response formats
-      let aiText = "";
-      if (data.data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-        aiText = data.data.candidates[0].content.parts[0].text;
-      } else if (data.response) {
-        aiText = data.response;
-      } else if (data.text) {
-        aiText = data.text;
-      } else if (data.message) {
-        aiText = data.message;
-      } else {
-        aiText = "I received your message but couldn't generate a proper response.";
-      }
-
-      // Client-side safeguard: truncate very long responses
-      const MAX_CHARS = 3500;
+      // Client-side safeguard: truncate very long responses to avoid filling UI and consuming client memory.
+      const MAX_CHARS = 3500; // hard cap on characters we'll show in the UI
       let aiTextTruncated = aiText;
       let wasTruncated = false;
       if (aiText && aiText.length > MAX_CHARS) {
-        aiTextTruncated = aiText.slice(0, MAX_CHARS) + "\n\n... (response truncated)";
+        aiTextTruncated = aiText.slice(0, MAX_CHARS) + "\n\n... (truncated)";
         wasTruncated = true;
       }
       
       // Remove any existing typing indicator
       setMessages(prev => prev.filter(msg => msg.sender !== "ai-typing"));
       
-      // Add typing animation
+      // Add typing animation (pass controller.signal so typing can stop when aborted)
       await simulateTyping(aiTextTruncated, (currentText) => {
         setMessages(prev => {
           const withoutTyping = prev.filter(msg => msg.sender !== "ai-typing");
@@ -173,28 +127,20 @@ const AiLearn = () => {
 
     } catch (err) {
       if (err?.name === 'AbortError') {
-        // User aborted generation
+        // user aborted generation
         setMessages(prev => {
           const withoutTyping = prev.filter(msg => msg.sender !== "ai-typing");
-          return [...withoutTyping, { 
-            sender: "ai", 
-            text: "⚠️ Generation stopped by user to save tokens.", 
-            timestamp: new Date() 
-          }];
+          return [...withoutTyping, { sender: "ai", text: "⚠️ Generation stopped by user to save tokens.", timestamp: new Date() }];
         });
         toast("Generation stopped to save tokens.");
       } else {
         console.error("Unexpected error calling Gemini:", err);
-        setMessages((prev) => [...prev, { 
-          sender: "ai", 
-          text: `⚠️ Something went wrong: ${err?.message || 'Unknown error'}`,
-          timestamp: new Date() 
-        }]);
+        setMessages((prev) => [...prev, { sender: "ai", text: `⚠️ Something went wrong: ${err?.message || err}`, timestamp: new Date() }]);
       }
     } finally {
       setLoading(false);
       setIsTyping(false);
-      abortControllerRef.current = null;
+      if (abortControllerRef.current) abortControllerRef.current = null;
     }
   };
 
@@ -206,7 +152,7 @@ const AiLearn = () => {
     }
 
     try {
-      const res = await axiosInstance.post("/gemini/save", {
+      const res = await api.post("/gemini/save", {
         messages: messages.map((m) => ({ sender: m.sender, text: m.text })),
         model: MODEL_NAME,
       });
@@ -214,17 +160,12 @@ const AiLearn = () => {
       if (res?.data?.chatId) {
         toast.success("Chat saved successfully! 💾");
         try {
-          const ares = await axiosInstance.get("/gemini/activities");
+          const ares = await api.get("/gemini/activities");
           const docs = ares.data.activities || [];
-          const mapped = docs.map((d) => ({ 
-            type: d.type, 
-            date: d.createdAt, 
-            name: d.meta?.name, 
-            level: d.meta?.level 
-          }));
+          const mapped = docs.map((d) => ({ type: d.type, date: d.createdAt, name: d.meta?.name, level: d.meta?.level }));
           localStorage.setItem("progressEvents:v1", JSON.stringify(mapped));
         } catch (e) {
-          console.log("Could not fetch activities:", e);
+          // ignore
         }
       } else {
         toast.success("Chat saved!");
@@ -376,7 +317,10 @@ const AiLearn = () => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.95 }}
-                  onClick={stopGeneration}
+                  onClick={() => {
+                    // stop in-progress generation
+                    if (typeof stopGeneration === 'function') stopGeneration();
+                  }}
                   className="p-3 rounded-2xl bg-red-600/80 text-white border border-red-400/30 hover:bg-red-600/100 transition-all duration-300 flex items-center gap-2 text-sm font-medium"
                 >
                   Stop
@@ -603,7 +547,7 @@ const AiLearn = () => {
         </div>
       </div>
 
-      <style jsx>{`
+      <style>{`
         .custom-scrollbar::-webkit-scrollbar {
           width: 6px;
         }

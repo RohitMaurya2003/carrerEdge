@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import { axiosInstance } from "../lib/axios";
+import api from "../lib/axios";
 
 export const useMenteeStore = create((set, get) => ({
   mentors: [],
@@ -9,7 +9,7 @@ export const useMenteeStore = create((set, get) => ({
   fetchMentors: async () => {
     set({ isLoading: true });
     try {
-      const res = await axiosInstance.get("/mentorship/mentors");
+  const res = await api.get("/mentorship/mentors");
       set({ mentors: res.data });
     } catch (error) {
       toast.error(error.response?.data?.message || "Error fetching mentors");
@@ -20,7 +20,7 @@ export const useMenteeStore = create((set, get) => ({
 
   requestMentorship: async (mentorId) => {
     try {
-      await axiosInstance.post(`/mentorship/request/${mentorId}`);
+  await api.post(`/mentorship/request/${mentorId}`);
       toast.success("Mentorship request sent");
       set({
         mentors: get().mentors.map((mentor) =>
@@ -34,7 +34,7 @@ export const useMenteeStore = create((set, get) => ({
 
   cancelRequest: async (mentorId) => {
     try {
-      await axiosInstance.delete(`/mentorship/cancel/${mentorId}`);
+  await api.delete(`/mentorship/cancel/${mentorId}`);
       toast.success("Mentorship request canceled");
       set({
         mentors: get().mentors.map((mentor) =>

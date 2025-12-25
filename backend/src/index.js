@@ -1,14 +1,17 @@
+﻿// Single clean backend bootstrap for mentor-match backend
 import express from "express";
 import dotenv from "dotenv";
+import path from "path";
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import path from "path";
 import helmet from "helmet";
 import rateLimit from "express-rate-limit";
 import mongoSanitize from "express-mongo-sanitize";
 import xss from "xss-clean";
 
 import { connectDB } from "./lib/db.js";
+import { app, server } from "./lib/socket.js";
+
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import mentorRoutes from "./routes/mentor.route.js";
@@ -16,7 +19,6 @@ import connectionRoutes from "./routes/connection.route.js";
 import geminiRoutes from "./routes/gemini.route.js";
 import paymentRoutes from "./routes/payment.route.js";
 import perplexityRoutes from "./routes/perplexity.route.js";
-import { app, server } from "./lib/socket.js";
 
 dotenv.config();
 
@@ -57,98 +59,83 @@ app.use(mongoSanitize());
 // Data sanitization against XSS
 app.use(xss());
 
-// Enhanced CORS configuration
-// Enhanced CORS configuration
-const getCorsOptions = () => {
-  // Default origins for development and production
-  const defaultOrigins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173", 
-    "https://rohitcarreredge.netlify.app",
-    "https://carreredge.onrender.com" // Add your Render backend URL
-  ];
-  
-  // Get origins from environment variable or use defaults
-  const raw = process.env.FRONTEND_URL || defaultOrigins.join(",");
-  const allowedOrigins = raw.split(",").map((s) => s.trim()).filter(Boolean);
-  
-  console.log("🔄 CORS allowed origins:", allowedOrigins);
-  
-  return {
-    origin: (origin, callback) => {
-      // Allow requests with no origin (server-to-server, curl, health checks, etc.)
-      if (!origin) {
-        console.log("✅ Allowing request with no origin (health check/internal)");
-        return callback(null, true);
-      }
-      
-      // In development, be more permissive
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`🔓 Development mode - Allowing origin: ${origin}`);
-        return callback(null, true);
-      }
-      
-      // Check if origin is in allowed list
-      if (allowedOrigins.includes(origin)) {
-        console.log(`✅ Allowed CORS request from: ${origin}`);
-        return callback(null, true);
-      } else {
-        console.log(`❌ Blocked CORS request from: ${origin}`);
-        console.log(`📋 Allowed origins:`, allowedOrigins);
-        return callback(new Error(`CORS policy: Origin ${origin} not allowed`), false);
-      }
-    },
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-    allowedHeaders: [
-      'Content-Type', 
-      'Authorization', 
-      'X-Requested-With', 
-      'Cookie', 
-      'Set-Cookie',
-      'Accept',
-      'Origin'
-    ],
-    exposedHeaders: ["set-cookie"],
-    maxAge: 86400 // 24 hours for preflight cache
-  };
+// Define trusted origins - include Netlify, Vercel, and local development
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  "https://rohitcarreredge.netlify.app",
+  "https://carreredge.onrender.com",
+  "http://localhost:5173",
+  "http://127.0.0.1:5173"
+].filter(Boolean);
+
+// Also allow all Vercel preview deployments
+const vercelPattern = /https:\/\/carrer-edge.*\.vercel\.app$/;
+
+// CORS configuration with origin checking
+const corsOptions = {
+  origin: function(origin, callback) {
+    // Allow server-to-server requests (no origin)
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    // Check against allowed origins and Vercel pattern
+    if (allowedOrigins.includes(origin) || vercelPattern.test(origin)) {
+      callback(null, true);
+    } else {
+      console.log("Blocked CORS origin:", origin);
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization", 
+    "X-Requested-With",
+    "Cookie",
+    "Accept",
+    "Origin"
+  ],
+  exposedHeaders: ["Set-Cookie"],
 };
 
 // Apply CORS middleware
-const corsOptions = getCorsOptions();
 app.use(cors(corsOptions));
 
-// Explicitly handle preflight requests for all routes
-app.options("*", cors(corsOptions));
-
-// Enhanced CORS error handler
-app.use((err, req, res, next) => {
-  if (err && /CORS policy/i.test(err.message)) {
-    console.log(`🚫 CORS Error: ${err.message}`);
-    return res.status(403).json({ 
-      message: err.message,
-      details: "Check if your frontend URL is in the allowed origins list",
-      allowedOrigins: corsOptions.origin instanceof Function ? "Dynamic check" : corsOptions.origin
-    });
+// Handle OPTIONS preflight requests
+app.options("*", (req, res) => {
+  const origin = req.headers.origin;
+  
+  // Set CORS headers for allowed origins
+  if (origin && (allowedOrigins.includes(origin) || vercelPattern.test(origin))) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Cookie, Accept, Origin");
+    res.header("Access-Control-Expose-Headers", "Set-Cookie");
   }
-  next(err);
+  
+  res.status(204).end();
 });
 
-// Request logging middleware (useful for debugging)
+// Allow larger payloads (images, base64 uploads from frontend)
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
+app.use(cookieParser());
+
+// Simple request logging
 app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.headers.origin || 'No Origin'}`);
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.path} - Origin: ${req.headers.origin || "No Origin"}`);
   next();
 });
 
-// Health check route
-app.get("/api/health", (req, res) => {
-  res.status(200).json({ 
-    status: "OK", 
-    message: "Server is running", 
-    timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development'
-  });
-});
+// Health
+app.get("/api/health", (req, res) => res.status(200).json({
+  status: "OK",
+  env: process.env.NODE_ENV || "development",
+  corsOrigins: [...allowedOrigins, "(and all https://*.vercel.app deployments)"]
+}));
 
 // Register API routes with rate limiting
 app.use("/api/auth", authLimiter, authRoutes);
@@ -159,44 +146,32 @@ app.use("/api/payments", authLimiter, paymentRoutes);
 app.use("/api/discover", apiLimiter, perplexityRoutes);
 app.use("/api/connections", apiLimiter, connectionRoutes);
 
-// Serve static files in production
+// Serve static frontend in production
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
-
-  // Handle SPA routing - serve index.html for all unknown routes
-  app.get("*", (req, res, next) => {
-    // Don't serve HTML for API routes
-    if (req.path.startsWith('/api/')) {
-      return next();
-    }
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
-  });
+  app.get("*", (req, res) => res.sendFile(path.join(__dirname, "../frontend/dist/index.html")));
 }
 
-// 404 handler for API routes
-app.use("/api/*", (req, res) => {
-  res.status(404).json({ 
-    message: "API endpoint not found",
-    path: req.path
-  });
+// 404 for unknown API routes
+app.use((req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ message: "API endpoint not found", path: req.path });
+  }
+  next();
 });
 
 // Global error handler
-app.use((error, req, res, next) => {
-  console.error("🔥 Global Error Handler:", error);
-  res.status(error.status || 500).json({
-    message: error.message || "Internal Server Error",
-    ...(process.env.NODE_ENV === 'development' && { stack: error.stack })
-  });
+app.use((err, req, res, next) => {
+  console.error("Global error:", err && err.stack ? err.stack : err);
+  res.status(err.status || 500).json({ message: err.message || "Internal Server Error" });
 });
 
-// Start server
 server.listen(PORT, () => {
-  console.log("🚀 Server is running on PORT:", PORT);
-  console.log("🌍 Environment:", process.env.NODE_ENV || 'development');
-  console.log("📋 Allowed CORS origins:", 
-    process.env.FRONTEND_URL || "http://localhost:5173, https://rohitcarreredge.netlify.app"
-  );
+  console.log(`Server listening on ${PORT}`);
+  console.log("Allowed CORS origins:", [
+    ...allowedOrigins,
+    "(and all https://*.vercel.app deployments)"
+  ]);
   connectDB();
 });
 

@@ -5,17 +5,19 @@ export const generateToken = (userId, res) => {
     expiresIn: "7d",
   });
 
-  console.log("JWT Token:", token);
   const isProd = process.env.NODE_ENV === "production";
-  // For cross-origin deployments (frontend and backend on different domains)
-  // browsers require cookies to have SameSite='None' and Secure=true.
-  // In development we keep SameSite strict/lax to ease testing on localhost.
-  res.cookie("jwt", token, {
-    maxAge: 7 * 24 * 60 * 60 * 1000, // MS
-    httpOnly: true, // prevent XSS
-    sameSite: isProd ? "none" : "lax",
-    secure: isProd,
-  });
+  
+  // Cookie configuration for cross-origin deployments
+  const cookieOptions = {
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days in MS
+    httpOnly: true, // prevent XSS attacks
+    sameSite: isProd ? "none" : "lax", // 'none' required for cross-site cookies
+    secure: isProd, // true in production (HTTPS required)
+    path: "/", // cookie available for all routes
+  };
+
+  console.log("Setting JWT cookie with options:", cookieOptions);
+  res.cookie("jwt", token, cookieOptions);
 
   return token;
 };

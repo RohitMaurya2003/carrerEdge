@@ -1,19 +1,23 @@
+// frontend/src/lib/axios.js
 import axios from "axios";
 
-const API_BASE = (import.meta.env.VITE_API_URL || "http://localhost:5001").trim().replace(/\/$/, "");
-
-export const axiosInstance = axios.create({
-  baseURL: `${API_BASE}/api`,
-  withCredentials: true, // include cookies
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || "http://localhost:5001/api",
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// Add response interceptor for better error handling
-axiosInstance.interceptors.response.use(
+// Add response interceptor to handle CORS errors gracefully
+api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.code === 'ERR_NETWORK') {
-      console.error('Network error - Backend might be down');
+    if (error.message === "Network Error") {
+      console.error("CORS or Network Error:", error);
     }
     return Promise.reject(error);
   }
 );
+
+export default api;
